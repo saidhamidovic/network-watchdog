@@ -8,6 +8,8 @@ from datetime import datetime
 
 # Config
 AUTH_LOG = os.environ.get("AUTH_LOG", "/var/log/auth.log")
+FAIL2BAN_LOG = os.environ.get("FAIL2BAN_LOG", "/var/log/fail2ban.log")
+SECURITY_LOG = os.environ.get("SECURITY_LOG", "/var/log/securityguardian.log")
 GATEWAY_IP = os.environ.get("GATEWAY_IP", "192.168.0.1")
 ARP_INTERVAL = int(os.environ.get("ARP_INTERVAL", "60"))
 NTFY_TOPIC = os.environ.get("NTFY_TOPIC", "")
@@ -29,6 +31,15 @@ def send_notification(message, title="Security Alert"):
             pass
     except Exception as e:
         log_msg(f"Notification failed: {e}")
+
+def request_ban(ip, reason="Manual trigger"):
+    """Writes a ban request to the security log for fail2ban to process."""
+    try:
+        with open(SECURITY_LOG, "a") as f:
+            f.write(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] BAN_REQUEST IP={ip} REASON=\"{reason}\"\n")
+        log_msg(f"Ban requested for {ip} (Reason: {reason})")
+    except Exception as e:
+        log_msg(f"Failed to write to {SECURITY_LOG}: {e}")
 
 # --- Feature 1: SSH Monitor ---
 def monitor_ssh():
@@ -100,16 +111,57 @@ def monitor_arp():
         
         time.sleep(ARP_INTERVAL)
 
+# --- Feature 3: Fail2ban Monitor ---
+def monitor_fail2ban():
+    log_msg(f"Starting Fail2ban monitor on {FAIL2BAN_LOG}...")
+    
+    # Ensure log file exists so tail doesn't fail immediately
+    if not os.path.exists(FAIL2BAN_LOG):
+        try:
+            open(FAIL2BAN_LOG, 'a').close()
+        except Exception:
+            pass
+
+    try:
+        process = subprocess.Popen(["tail", "-F", FAIL2BAN_LOG], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        
+        # Regex for Fail2ban events
+        # Example: 2023-10-21 15:30:00,123 fail2ban.actions [123]: NOTICE [sshd] Ban 192.168.0.50
+        ban_re = re.compile(r"NOTICE\s+\[(\S+)\]\s+Ban\s+(\d+\.\d+\.\d+\.\d+)")
+
+        for line in process.stdout:
+            match = ban_re.search(line)
+            if match:
+                jail = match.group(1)
+                ip = match.group(2)
+                msg = f"IP BANNED: {ip} (Jail: {jail})"
+                log_msg(msg)
+                send_notification(msg, title="Fail2ban Action")
+    except Exception as e:
+        log_msg(f"Fail2ban Monitor Error: {e}")
+
 def main():
     if not NTFY_TOPIC:
         log_msg("WARNING: NTFY_TOPIC not set. Alerts will only show in logs.")
     
+    # Ensure security log exists
+    if not os.path.exists(SECURITY_LOG):
+        try:
+            open(SECURITY_LOG, 'a').close()
+            # Set permissions to allow writing if mounted from host
+            os.chmod(SECURITY_LOG, 0o666)
+        except Exception:
+            pass
+
     # Start threads
-    ssh_thread = threading.Thread(target=monitor_ssh, daemon=True)
-    arp_thread = threading.Thread(target=monitor_arp, daemon=True)
+    threads = [
+        threading.Thread(target=monitor_ssh, daemon=True),
+        threading.Thread(target=monitor_arp, daemon=True),
+        threading.Thread(target=monitor_fail2ban, daemon=True)
+    ]
     
-    ssh_thread.start()
-    arp_thread.start()
+    for t in threads:
+        t.start()
     
     # Keep main alive
     while True:

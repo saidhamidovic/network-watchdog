@@ -1,0 +1,30 @@
+services:
+  guardian:
+    build: .
+    container_name: security_guardian
+    network_mode: host
+    privileged: true
+    volumes:
+      - /var/log:/var/log
+    environment:
+      - NTFY_TOPIC=${NTFY_TOPIC}
+      - GATEWAY_IP=${GATEWAY_IP:-192.168.0.1}
+      - ARP_INTERVAL=60
+      - FAIL2BAN_LOG=/var/log/fail2ban.log
+      - SECURITY_LOG=/var/log/securityguardian.log
+    env_file:
+      - .env
+    restart: unless-stopped
+
+  fail2ban:
+    image: crazymax/fail2ban:latest
+    container_name: security_fail2ban
+    network_mode: host
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - ./fail2ban:/data
+      - /var/log:/var/log
+    restart: unless-stopped

@@ -1,0 +1,23 @@
+[DEFAULT]
+# Ban for 1 hour by default
+bantime  = 1h
+findtime = 10m
+maxretry = 5
+
+# Basic sshd jail
+[sshd]
+enabled = true
+port    = ssh
+logpath = /var/log/auth.log
+backend = polling
+
+# Custom jail for SecurityGuardian active banning
+[securityguardian]
+enabled = true
+filter  = securityguardian
+logpath = /var/log/securityguardian.log
+# One strike and you're out (since SecurityGuardian already validated the threat)
+maxretry = 1
+bantime  = 24h
+port     = all
+protocol = all
