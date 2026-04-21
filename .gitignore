@@ -1,0 +1,15 @@
+# Local data and logs
+data/
+*.log
+*.txt
+.env
+
+# Docker
+.docker/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/

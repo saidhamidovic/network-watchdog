@@ -1,0 +1,15 @@
+services:
+  watchdog:
+    build: .
+    container_name: network_watchdog
+    network_mode: host
+    volumes:
+      - ./data:/data
+      - ./scanner.py:/app/scanner.py # Mount the script directly
+    environment:
+      - SCAN_TARGETS=${SCAN_TARGETS:-192.168.0.0/24}
+      - SCAN_INTERVAL=${SCAN_INTERVAL:-28800}
+      - NTFY_TOPIC=${NTFY_TOPIC}
+    env_file:
+      - .env
+    restart: unless-stopped
