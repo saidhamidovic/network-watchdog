@@ -1,15 +1,21 @@
 services:
   watchdog:
     build: .
-    container_name: network_watchdog
+    container_name: watchdog
+    restart: unless-stopped
     network_mode: host
+    privileged: true
     volumes:
       - ./data:/data
-      - ./scanner.py:/app/scanner.py # Mount the script directly
-    environment:
-      - SCAN_TARGETS=${SCAN_TARGETS:-192.168.0.0/24}
-      - SCAN_INTERVAL=${SCAN_INTERVAL:-28800}
-      - NTFY_TOPIC=${NTFY_TOPIC}
+      # Mount auth log for SSH monitoring (read-only)
+      - /var/log/auth.log:/var/log/auth.log:ro
+      # Mount fail2ban log for monitoring (read-only)
+      - /var/log/fail2ban.log:/var/log/fail2ban.log:ro
+      # Mount audit log for kernel monitoring (read-only)
+      - /var/log/audit:/var/log/audit:ro
+      # Allow watchdog to write to a custom log for fail2ban to consume
+      - ./data/security_events.log:/var/log/securityguardian.log
     env_file:
       - .env
-    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1

@@ -3,6 +3,7 @@ data/
 *.log
 *.txt
 .env
+GEMINI.md
 
 # Docker
 .docker/
