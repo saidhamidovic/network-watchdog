@@ -1,5 +1,13 @@
 # 🛰️ WatchDog Unified
 
+<p align="left">
+  <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python" />
+  <img src="https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker" />
+  <img src="https://img.shields.io/badge/Security-IDS%20%2F%20Monitoring-E03C11?style=flat-square" alt="Security" />
+  <img src="https://img.shields.io/badge/Scanner-Nmap-0052CC?style=flat-square" alt="Nmap" />
+  <img src="https://img.shields.io/badge/Alerts-ntfy.sh-88171A?style=flat-square" alt="ntfy" />
+</p>
+
 A comprehensive home network security suite that combines proactive scanning with real-time intrusion detection.
 
 ## Features
@@ -12,15 +20,15 @@ A comprehensive home network security suite that combines proactive scanning wit
 
 ## Setup
 
-1.  **Configure environment variables:**
-    ```bash
-    cp .env.example .env
-    # Edit .env with your network details and ntfy topic
-    ```
-2.  **Run with Docker Compose:**
-    ```bash
-    docker compose up -d
-    ```
+1. **Configure environment variables:**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your network details and ntfy topic
+   ```
+2. **Run with Docker Compose:**
+   ```bash
+   docker compose up -d
+   ```
 
 ## Configuration (.env)
 
